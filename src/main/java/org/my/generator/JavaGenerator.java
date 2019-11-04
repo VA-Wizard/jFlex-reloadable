@@ -1,13 +1,4 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * JFlex 1.7.0                                                             *
- * Copyright (C) 1998-2018  Gerwin Klein <lsf@jflex.de>                    *
- * All rights reserved.                                                    *
- *                                                                         *
- * License: BSD                                                            *
- *                                                                         *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-package org.my;
+package org.my.generator;
 
 import jflex.*;
 
@@ -15,6 +6,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
 
 public class JavaGenerator {
 
@@ -37,11 +29,27 @@ public class JavaGenerator {
             nfa = null;
             Out.checkErrors();
             dfa.minimize();
-            Emitter e = new Emitter(parser, dfa, new PrintWriter(writer));
+            Emitter e = new Emitter(new File(""), parser, dfa);
+            setPrivateFields(e, writer);
             e.emit();
         } catch (Exception e) {
             e.printStackTrace();
             throw new GeneratorException();
+        }
+    }
+
+    private static void setPrivateFields(Emitter e, Writer writer) {
+        try {
+            PrintWriter printWriter = new PrintWriter(writer);
+            Field out = e.getClass().getDeclaredField("out");
+            out.setAccessible(true);
+            out.set(e, printWriter);
+
+            Field f1 = e.getClass().getDeclaredField("skel");
+            f1.setAccessible(true);
+            f1.set(e, new Skeleton(printWriter));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
     }
 

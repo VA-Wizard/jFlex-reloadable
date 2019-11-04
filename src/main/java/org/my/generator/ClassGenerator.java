@@ -1,57 +1,71 @@
-package org.my;
+package org.my.generator;
 
 import javax.tools.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ClassGenerator {
 
-    public static void main(String[] args) throws Exception {
-        Writer w = new StringWriter();
-        JavaGenerator.generate(
-                new InputStreamReader(new FileInputStream("/Users/vminin/IdeaProjects/jFlex-reloadable/src/main/resources/example.jflex")),
-                w);
-        System.out.println(w);
-
-        m(null);
-    }
-
-
-    public static void m(String[] args) throws Exception {
+    /**
+     * Compile and load java file
+     * Only one class can be compiled and loaded
+     *
+     * @param javaScr java code, must noy contain nested/inner/anonymous classes
+     * @return loaded class with new classLoader
+     */
+    public static Class<?> compileAndLoadClass(String javaScr) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
         DiagnosticCollector<JavaFileObject> diagnostics =
                 new DiagnosticCollector<>();
 
-        String className = "Test";
+        String className = extractClassName(javaScr);
 
         final JavaByteObject byteObject = new JavaByteObject(className);
 
-        StandardJavaFileManager standardFileManager =
-                compiler.getStandardFileManager(diagnostics, null, null);
+        StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(diagnostics, null, null);
 
-        JavaFileManager fileManager = createFileManager(standardFileManager,
-                byteObject);
+        JavaFileManager fileManager = createFileManager(standardFileManager, byteObject);
 
-        JavaCompiler.CompilationTask task = compiler.getTask(null,
-                fileManager, diagnostics, null, null, getCompilationUnits(className));
+        JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, null, null, getCompilationUnits(className, javaScr));
 
         if (!task.call()) {
             diagnostics.getDiagnostics().forEach(System.out::println);
         }
-        fileManager.close();
+        try {
+            fileManager.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-        //loading and using our compiled class
+//        loading and using our compiled class
         final ClassLoader inMemoryClassLoader = createClassLoader(byteObject);
-        Class<?> test = (Class<?>) inMemoryClassLoader.loadClass(className);
-        System.out.println(test.newInstance());
+        try {
+            return inMemoryClassLoader.loadClass(className);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+
+    private static String extractClassName(String javaScr) {
+        String packageName = "";
+        String noCommentsScr = javaScr.replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "");
+        Matcher packageMatcher = Pattern.compile("package\\s+(.*?);").matcher(noCommentsScr);
+        if (packageMatcher.find()) {
+            packageName = packageMatcher.group(1).trim() + ".";
+        }
+        Matcher classMatcher = Pattern.compile("class\\s+(.*?)[\\s{]").matcher(noCommentsScr);
+        if (classMatcher.find()) {
+            return packageName + classMatcher.group(1).trim();
+        } else {
+            throw new IllegalArgumentException("cannot find class in java source");
+        }
     }
 
     private static JavaFileManager createFileManager(StandardJavaFileManager fileManager,
@@ -77,23 +91,17 @@ public class ClassGenerator {
         };
     }
 
-    public static Iterable<? extends JavaFileObject> getCompilationUnits(String className) {
-        JavaStringObject stringObject =
-                new JavaStringObject(className, getSource());
+    private static Iterable<? extends JavaFileObject> getCompilationUnits(String className, String src) {
+        JavaStringObject stringObject = new JavaStringObject(className, src);
         return Arrays.asList(stringObject);
     }
 
-    public static String getSource() {
-        return "public class Test {" +
-                "public void doSomething(){" +
-                "System.out.println(\"testing\");}}";
-    }
 
-    public static class JavaByteObject extends SimpleJavaFileObject {
+    private static class JavaByteObject extends SimpleJavaFileObject {
         private ByteArrayOutputStream outputStream;
 
-        protected JavaByteObject(String name) throws URISyntaxException {
-            super(URI.create("bytes:///"+name + name.replaceAll("\\.", "/")), Kind.CLASS);
+        protected JavaByteObject(String name) {
+            super(URI.create("bytes:///" + name + name.replaceAll("\\.", "/")), Kind.CLASS);
             outputStream = new ByteArrayOutputStream();
         }
 
@@ -109,7 +117,7 @@ public class ClassGenerator {
         }
     }
 
-    public static class JavaStringObject extends SimpleJavaFileObject {
+    private static class JavaStringObject extends SimpleJavaFileObject {
         private final String source;
 
         protected JavaStringObject(String name, String source) {
