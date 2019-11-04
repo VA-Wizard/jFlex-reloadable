@@ -18,7 +18,7 @@ public class ClassGenerator {
      * @param javaScr java code, must noy contain nested/inner/anonymous classes
      * @return loaded class with new classLoader
      */
-    public static Class<?> compileAndLoadClass(String javaScr) {
+    public Class<?> compileAndLoadClass(String javaScr) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
         DiagnosticCollector<JavaFileObject> diagnostics =
@@ -53,7 +53,7 @@ public class ClassGenerator {
     }
 
 
-    private static String extractClassName(String javaScr) {
+    private String extractClassName(String javaScr) {
         String packageName = "";
         String noCommentsScr = javaScr.replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "");
         Matcher packageMatcher = Pattern.compile("package\\s+(.*?);").matcher(noCommentsScr);
@@ -68,8 +68,8 @@ public class ClassGenerator {
         }
     }
 
-    private static JavaFileManager createFileManager(StandardJavaFileManager fileManager,
-                                                     JavaByteObject byteObject) {
+    private JavaFileManager createFileManager(StandardJavaFileManager fileManager,
+                                              JavaByteObject byteObject) {
         return new ForwardingJavaFileManager<StandardJavaFileManager>(fileManager) {
             @Override
             public JavaFileObject getJavaFileForOutput(Location location,
@@ -80,7 +80,7 @@ public class ClassGenerator {
         };
     }
 
-    private static ClassLoader createClassLoader(final JavaByteObject byteObject) {
+    private ClassLoader createClassLoader(final JavaByteObject byteObject) {
         return new ClassLoader() {
             @Override
             public Class<?> findClass(String name) throws ClassNotFoundException {
@@ -91,7 +91,7 @@ public class ClassGenerator {
         };
     }
 
-    private static Iterable<? extends JavaFileObject> getCompilationUnits(String className, String src) {
+    private Iterable<? extends JavaFileObject> getCompilationUnits(String className, String src) {
         JavaStringObject stringObject = new JavaStringObject(className, src);
         return Arrays.asList(stringObject);
     }

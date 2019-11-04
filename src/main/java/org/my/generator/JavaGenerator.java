@@ -11,9 +11,9 @@ import java.lang.reflect.Field;
 public class JavaGenerator {
 
     /**
-     * Generates a scanner for the specified input file.
+     * Generates a scanner for the specified input file and write to writer
      */
-    public static void generate(Reader input, Writer writer) {
+    public void generate(Reader input, Writer writer) {
 
         Out.resetCounters();
 
@@ -30,7 +30,9 @@ public class JavaGenerator {
             Out.checkErrors();
             dfa.minimize();
             Emitter e = new Emitter(new File(""), parser, dfa);
-            setPrivateFields(e, writer);
+            PrintWriter printWriter = new PrintWriter(writer);
+            setPrivateField(e, "out", printWriter);
+            setPrivateField(e, "skel", new Skeleton(printWriter));
             e.emit();
         } catch (Exception e) {
             e.printStackTrace();
@@ -38,16 +40,11 @@ public class JavaGenerator {
         }
     }
 
-    private static void setPrivateFields(Emitter e, Writer writer) {
+    private void setPrivateField(Emitter e, String fieldName, Object o) {
         try {
-            PrintWriter printWriter = new PrintWriter(writer);
-            Field out = e.getClass().getDeclaredField("out");
+            Field out = e.getClass().getDeclaredField(fieldName);
             out.setAccessible(true);
-            out.set(e, printWriter);
-
-            Field f1 = e.getClass().getDeclaredField("skel");
-            f1.setAccessible(true);
-            f1.set(e, new Skeleton(printWriter));
+            out.set(e, o);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
