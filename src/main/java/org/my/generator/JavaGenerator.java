@@ -7,11 +7,6 @@ import java.lang.reflect.Field;
 
 public class JavaGenerator {
 
-    public static void main(String[] args) throws FileNotFoundException {
-
-        new FileOutputStream("outputFile");
-    }
-
     /**
      * Generates a scanner for the specified input file and write to writer
      */
