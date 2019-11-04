@@ -2,13 +2,15 @@ package org.my.generator;
 
 import jflex.*;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.lang.reflect.Field;
 
 public class JavaGenerator {
+
+    public static void main(String[] args) throws FileNotFoundException {
+
+        new FileOutputStream("outputFile");
+    }
 
     /**
      * Generates a scanner for the specified input file and write to writer
@@ -30,9 +32,7 @@ public class JavaGenerator {
             Out.checkErrors();
             dfa.minimize();
             Emitter e = new Emitter(new File(""), parser, dfa);
-            PrintWriter printWriter = new PrintWriter(writer);
-            setPrivateField(e, "out", printWriter);
-            setPrivateField(e, "skel", new Skeleton(printWriter));
+            hackEmitter(e, writer);
             e.emit();
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,11 +40,18 @@ public class JavaGenerator {
         }
     }
 
-    private void setPrivateField(Emitter e, String fieldName, Object o) {
+    private void hackEmitter(Emitter e, Writer writer) {
         try {
-            Field out = e.getClass().getDeclaredField(fieldName);
+            PrintWriter printWriter = new PrintWriter(writer);
+            Field out = e.getClass().getDeclaredField("out");
             out.setAccessible(true);
-            out.set(e, o);
+            Writer o = (Writer) out.get(e);
+            o.close();
+            out.set(e, printWriter);
+
+            Field f1 = e.getClass().getDeclaredField("skel");
+            f1.setAccessible(true);
+            f1.set(e, new Skeleton(printWriter));
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
