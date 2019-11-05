@@ -12,7 +12,7 @@ public class FlexFactory {
 
     /**
      * Get generated FlexHandler class from jflex file with specified input reader
-     * make sure the flex class extends FlexHandler (there should be '%extends FlexHandler' in options part)
+     * make sure the flex class implements FlexHandler (there should be '%implements FlexHandler' in options part)
      *
      * @param flexFileReader   jflex source
      * @param lexScannerReader input to parse
