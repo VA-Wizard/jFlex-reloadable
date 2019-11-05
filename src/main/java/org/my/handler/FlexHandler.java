@@ -1,25 +1,25 @@
 package org.my.handler;
 
-public abstract class FlexHandler {
+public interface FlexHandler {
 
     /**
      * Enters a new lexical state
      *
      * @param newState the new lexical state
      */
-    public abstract void yybegin(int newState);
+    void yybegin(int newState);
 
 
     /**
      * Returns the current lexical state.
      */
-    public abstract int yystate();
+    int yystate();
 
 
     /**
      * Returns the text matched by the current regular expression.
      */
-    public abstract String yytext();
+    String yytext();
 
 
     /**
@@ -32,13 +32,13 @@ public abstract class FlexHandler {
      *            A value from 0 to yylength()-1.
      * @return the character at position pos
      */
-    public abstract char yycharat(int pos);
+    char yycharat(int pos);
 
 
     /**
      * Returns the length of the matched text region.
      */
-    public abstract int yylength();
+    int yylength();
 
 
     /**
@@ -48,7 +48,7 @@ public abstract class FlexHandler {
      * @return the next token
      * @throws java.io.IOException if any I/O-Error occurs
      */
-    public abstract int yylex() throws java.io.IOException;
+    int yylex() throws java.io.IOException;
 
 
     /**
@@ -59,7 +59,7 @@ public abstract class FlexHandler {
      * @param number the number of characters to be read again.
      *               This number must not be greater than yylength()!
      */
-    public abstract void yypushback(int number);
+    void yypushback(int number);
 
 
     /**
@@ -74,11 +74,11 @@ public abstract class FlexHandler {
      *
      * @param reader the new input stream
      */
-    public abstract void yyreset(java.io.Reader reader);
+    void yyreset(java.io.Reader reader);
 
 
     /**
      * Closes the input stream.
      */
-    public abstract void yyclose() throws java.io.IOException;
+    void yyclose() throws java.io.IOException;
 }
